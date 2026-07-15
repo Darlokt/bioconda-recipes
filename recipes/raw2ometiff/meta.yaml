@@ -1,0 +1,54 @@
+{% set version = "0.10.0" %}
+
+package:
+  name: raw2ometiff
+  version: {{ version }}
+
+source:
+  url: https://github.com/glencoesoftware/raw2ometiff/releases/download/v{{ version }}/raw2ometiff-{{ version }}.zip
+  sha256: a9efe3669a853a698bc7a0ce3723df44cb66ae3aab739aeddea434f7fd3002ba
+
+build:
+  number: 0
+  noarch: generic
+  run_exports:
+    - {{ pin_subpackage('raw2ometiff', max_pin="x.x") }}
+  script:
+    - mkdir -p "$PREFIX/share/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM/bin" "$PREFIX/bin"
+    - cp -R lib "$PREFIX/share/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM/"
+    - install -m 755 bin/raw2ometiff "$PREFIX/share/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM/bin/raw2ometiff"
+    - ln -s "../share/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM/bin/raw2ometiff" "$PREFIX/bin/raw2ometiff"
+
+requirements:
+  run:
+    - openjdk >=11,<26
+
+test:
+  requires:
+    - bioformats2raw >=0.12.0
+  commands:
+    - raw2ometiff --version 2>&1 | grep -F "Version = {{ version }}"
+    - raw2ometiff --help
+    - bioformats2raw "test&sizeX=16&sizeY=16.fake" input.zarr --resolutions 1
+    - raw2ometiff input.zarr output.ome.tiff --compression LZW
+    - test -s output.ome.tiff
+    - rm -rf input.zarr output.ome.tiff
+
+about:
+  home: https://github.com/glencoesoftware/raw2ometiff
+  summary: Raw format to OME-TIFF converter
+  description: |
+    raw2ometiff converts a full image pyramid in the Zarr layout produced by
+    bioformats2raw into a pyramidal OME-TIFF image.
+  license: GPL-2.0-only
+  license_file: LICENSE.txt
+  doc_url: https://github.com/glencoesoftware/raw2ometiff/blob/v{{ version }}/README.md
+  dev_url: https://github.com/glencoesoftware/raw2ometiff
+
+extra:
+  recipe-maintainers:
+    - Darlokt
+    - Tom-TBT
+  additional-platforms:
+    - linux-aarch64
+    - osx-arm64
